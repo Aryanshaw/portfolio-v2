@@ -48,8 +48,12 @@ export default function Terminal({ isExpanded }: { isExpanded: boolean }) {
 
     const output = handleCommand(input);
     const newHistory = [...history, { message: `${prompt} ${input}`, success: true }];
-    if (output) newHistory.push({ message: output, success: true });
+
+    const errorMessages = ['It is not a directory', 'It is not a file', 'No such file or directory', 'Cannot go up'];
+    if (output && errorMessages.includes(output.trim())) newHistory.push({ message: output, success: false });
+    else if (output) newHistory.push({ message: output, success: true });
     else newHistory.push({ message: 'Command not found', success: false });
+
     setHistory(newHistory);
     setInput('');
   };
@@ -85,7 +89,10 @@ help    - show commands`;
           return `Changed directory from ${cwd[cwd.length - 1]} to ${cwd[cwd.length - 2]}`;
         }
 
-        if (!args) return 'No directory specified';
+        if (args === undefined) {
+          setCwd(['']);
+          return 'Changed directory to /';
+        }
         const newDir = resolveNode(fileSystem, [...cwd, args]);
         if (!newDir || newDir.type !== 'directory') return 'It is not a directory';
 
