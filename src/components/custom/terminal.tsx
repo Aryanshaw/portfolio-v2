@@ -8,7 +8,7 @@ export default function Terminal({ isExpanded }: { isExpanded: boolean }) {
   const terminalRef = useRef<HTMLDivElement>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [streamingText, setStreamingText] = useState('');
-  const [cwd, setCwd] = useState<string[]>(['/']);
+  const [cwd, setCwd] = useState<string[]>(['']);
 
   const introMessage =
     "Hey, I'm Aryan 👋 , I'm a backend engineer who loves building full-stack apps, GenAI workflows, and developer tools from scratch. Type `help` to see what I can do!";
@@ -60,13 +60,13 @@ export default function Terminal({ isExpanded }: { isExpanded: boolean }) {
     const args = tokens[1];
     const dir = resolveNode(fileSystem, cwd);
 
-    console.log(command, args, dir);
+    console.log(command, args);
 
     switch (command) {
       case 'ls':
         if (!dir || dir.type !== 'directory') return 'No such file or directory';
         return Object.entries(dir.children)
-          .map(([name, node]: any) => (node.type === 'directory' ? `${name}/` : `${name}.txt`))
+          .map(([name, node]: any) => (node.type === 'directory' ? `${node.name}/` : `${node.name}`))
           .join('        ');
 
       case 'help':
@@ -79,10 +79,32 @@ pwd     - print working directory
 help    - show commands`;
 
       case 'cd':
+        if (args === '..') {
+          if (cwd.length === 1) return 'Cannot go up';
+          setCwd(cwd.slice(0, -1));
+          return `Changed directory from ${cwd[cwd.length - 1]} to ${cwd[cwd.length - 2]}`;
+        }
+
         if (!args) return 'No directory specified';
-        const newDir = resolveNode(fileSystem, cwd.concat(args));
-        if (!newDir || newDir.type !== 'directory') return 'No such directory';
+        const newDir = resolveNode(fileSystem, [...cwd, args]);
+        if (!newDir || newDir.type !== 'directory') return 'It is not a directory';
+
+        setCwd([...cwd, args]);
+
         return `Changed directory to ${args}`;
+
+      case 'cat':
+        if (!args) return 'No file specified';
+
+        const argsExt = args.split('.').pop();
+        if (argsExt !== 'txt') return 'Only .txt files are supported';
+
+        const file = dir.children?.[args.replace('.txt', '')];
+        if (!file || file.type !== 'file') return 'It is not a file';
+        return file.content;
+
+      case 'pwd':
+        return cwd.join('/');
 
       default:
         return null;
