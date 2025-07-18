@@ -16,7 +16,6 @@ export default function Terminal({ isExpanded }: { isExpanded: boolean }) {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [streamingText, setStreamingText] = useState('');
   const [cwd, setCwd] = useState<string[]>(['']);
-  // const [currentDirList, setCurrentDirList] = useState<string[]>([]);
   const suggestionsRef = useRef<string[]>([]);
   const suggestionIndexRef = useRef(0);
   const commandsRef = useRef<string[]>([]);
@@ -87,56 +86,8 @@ export default function Terminal({ isExpanded }: { isExpanded: boolean }) {
     }
 
     setHistory([...baseHistory, resultItem]);
-    // historyIndexRef.current = history.length;
     setInput('');
   };
-
-  // const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement> & { target: HTMLInputElement }) => {
-  //   if (e.key === 'Tab' && !e.shiftKey) {
-  //     e.preventDefault();
-  //     const commandInput = e.target.value.split(' ');
-  //     console.log('commandInput', e.target.value);
-  //     if (commandInput.length <= 1) return;
-
-  //     const command = commandInput[0];
-  //     const args = commandInput.slice(1).join(' ');
-
-  //     // const dir = resolveNode(fileSystem, cwd);
-
-  //     console.log(command, 'command', args, ' < -args');
-  //     if (command === 'ls' || command === 'cd' || command === 'cat') {
-  //       const response = handleCommand(`ls ${args}`);
-  //       const ls_list = response.split('        ');
-
-  //       if (currentDirList.length === 0) {
-  //         setCurrentDirList(ls_list);
-  //         setInput(`${command} ${ls_list.join(' ')}`);
-  //         e.target.value = `${command} ${ls_list.join(' ')}`;
-  //       }
-
-  //       console.log('currentDirList', currentDirList);
-  //       console.log('args', args);
-  //       if (currentDirList.length > 0 && !currentDirList.includes(args)) {
-  //         console.log('came in this if to match key words');
-  //       }
-
-  //       if (currentDirList.length > 0) {
-  //         console.log('came in this if to shift');
-  //         const latestDir = currentDirList.shift();
-  //         setInput(`${command} ${latestDir}`);
-  //         e.target.value = `${command} ${latestDir}`;
-  //       }
-
-  //       return;
-  //     }
-  //   }
-  //   if (e.key === 'Enter') {
-  //     setCurrentDirList([]);
-  //     handleSubmit(e as any);
-  //     // handleCommand(input.replace('/', ''));
-  //     // e.preventDefault();
-  //   }
-  // };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Tab' && !e.shiftKey) {
@@ -210,9 +161,12 @@ export default function Terminal({ isExpanded }: { isExpanded: boolean }) {
     switch (command) {
       case 'ls':
         // if (!dir || dir.type !== 'directory') return 'No such file or directory';
-        return Object.entries(dir.children)
-          .map(([name, node]: any) => (node.type === 'directory' ? `${node.name}/` : `${node.name}`))
-          .join('        ');
+        return (
+          Object.entries(dir.children)
+            // @ts-ignore
+            .map(([name, node]: any) => (node.type === 'directory' ? `${node.name}/` : `${node.name}`))
+            .join('        ')
+        );
 
       case 'help':
         return `Available commands:
