@@ -9,8 +9,9 @@ export default function TerminalPreview() {
 
   const miniWidth = 350;
   const miniHeight = 50;
-  const fullWidth = '60vw';
-  const fullHeight = '95%';
+  const fullWidth = '100%';
+  // const fullWidth = '60vw';
+  const fullHeight = '100%';
 
   const variants = {
     collapsed: { width: miniWidth, height: miniHeight, borderRadius: 12 },
@@ -23,16 +24,13 @@ export default function TerminalPreview() {
   }, []);
 
   return (
-    <div className="p-4 h-screen w-full relative">
+    <div className="p-4 h-full w-full relative place-items-end">
       <motion.div
         initial="collapsed"
         animate={isExpanded ? 'expanded' : 'collapsed'}
         variants={variants}
         transition={{ duration: 1, ease: 'easeInOut' }}
         style={{
-          position: 'fixed',
-          top: '1rem',
-          right: '1rem',
           transformOrigin: 'top right',
 
           padding: 4,
@@ -49,10 +47,16 @@ export default function TerminalPreview() {
           </div>
 
           {/* title */}
-          <p className="font-mono font-bold underline text-sm">aryanshaw@portfolio</p>
+          <a
+            href="https://www.linkedin.com/in/aryan-shaw-66784418b/"
+            target="_blank"
+            className="font-mono font-bold underline text-sm cursor-pointer"
+          >
+            aryanshaw@portfolio🔗
+          </a>
 
           {/* expand / collapse button */}
-          <button onClick={() => setIsExpanded(x => !x)}>
+          <button onClick={() => setIsExpanded(x => !x)} className="cursor-pointer">
             {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
           </button>
         </div>

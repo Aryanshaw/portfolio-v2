@@ -23,9 +23,9 @@ const fileSystem = {
             content:
               `✉️  Email: aryan.shaw2702@gmail.com\n\n` +
               `📱  Phone: +91-7044418370\n\n` +
-              `🐙  GitHub: https://github.com/aryanshaw\n\n` +
-              `🔗  LinkedIn: https://linkedin.com/in/aryanshaw\n\n` +
-              `✍️  Medium: https://medium.com/@aryanrot234`,
+              `🐙  GitHub: <a href="https://github.com/aryanshaw" target="_blank" class="underline" >https://github.com/aryanshaw</a>  \n\n ` +
+              `🔗  LinkedIn: <a href="https://www.linkedin.com/in/aryan-shaw-66784418b/" target="_blank" class="underline" >https://www.linkedin.com/in/aryan-shaw-66784418b/</a> \n\n` +
+              `✍️  Medium: <a href="https://medium.com/@aryanrot234" target="_blank" class="underline" >https://medium.com/@aryanrot234</a>`,
           },
         },
       },

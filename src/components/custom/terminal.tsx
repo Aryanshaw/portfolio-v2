@@ -78,7 +78,7 @@ export default function Terminal({ isExpanded }: { isExpanded: boolean }) {
         'Cannot go up',
       ].includes(output.trim());
       // detect if it’s HTML by looking for an <img> tag
-      const html = output.includes('<img ');
+      const html = output.includes('<img ') || output.includes('<a ');
       resultItem = { message: output, success: !isError, isHtml: html, type: 'output' };
     } else {
       // if in future you return objects, handle here...
