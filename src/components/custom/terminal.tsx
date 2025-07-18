@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { fileSystem, resolveNode } from '@/helper';
 
+type HistoryType = 'command' | 'output';
+
 type HistoryItem = {
   message: string;
+  type: HistoryType;
   success: boolean;
   isHtml?: boolean;
 };
@@ -13,6 +16,11 @@ export default function Terminal({ isExpanded }: { isExpanded: boolean }) {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [streamingText, setStreamingText] = useState('');
   const [cwd, setCwd] = useState<string[]>(['']);
+  // const [currentDirList, setCurrentDirList] = useState<string[]>([]);
+  const suggestionsRef = useRef<string[]>([]);
+  const suggestionIndexRef = useRef(0);
+  const commandsRef = useRef<string[]>([]);
+  const historyPointerRef = useRef<number>(-1);
 
   const introMessage =
     "Hey, I'm Aryan 👋 , I'm a backend engineer who loves building full-stack apps, GenAI workflows, and developer tools from scratch. Type `help` to see what I can do!";
@@ -29,7 +37,7 @@ export default function Terminal({ isExpanded }: { isExpanded: boolean }) {
       } else {
         clearInterval(interval);
         // Add full streamed message to history
-        setHistory(prev => [...prev, { message: introMessage, success: true }]);
+        setHistory(prev => [...prev, { message: introMessage, success: true, type: 'output' }]);
         setStreamingText('');
       }
     }, speed);
@@ -52,14 +60,16 @@ export default function Terminal({ isExpanded }: { isExpanded: boolean }) {
     }
 
     // 1) push the prompt
-    const baseHistory = [...history, { message: `${prompt} ${input}`, success: true }];
+    const baseHistory = [...history, { message: `${prompt} ${input}`, success: true, type: 'command' as HistoryType }];
+    commandsRef.current.push(input);
+    historyPointerRef.current = -1;
 
     // 2) run the command
-    const output = handleCommand(input);
+    const output = handleCommand(input.replace('/', ''));
     let resultItem: HistoryItem;
 
     if (!output) {
-      resultItem = { message: 'Command not found', success: false };
+      resultItem = { message: 'Command not found', success: false, type: 'output' };
     } else if (typeof output === 'string') {
       // error vs success
       const isError = [
@@ -70,14 +80,126 @@ export default function Terminal({ isExpanded }: { isExpanded: boolean }) {
       ].includes(output.trim());
       // detect if it’s HTML by looking for an <img> tag
       const html = output.includes('<img ');
-      resultItem = { message: output, success: !isError, isHtml: html };
+      resultItem = { message: output, success: !isError, isHtml: html, type: 'output' };
     } else {
       // if in future you return objects, handle here...
-      resultItem = { message: String(output), success: true };
+      resultItem = { message: String(output), success: true, type: 'output' };
     }
 
     setHistory([...baseHistory, resultItem]);
+    // historyIndexRef.current = history.length;
     setInput('');
+  };
+
+  // const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement> & { target: HTMLInputElement }) => {
+  //   if (e.key === 'Tab' && !e.shiftKey) {
+  //     e.preventDefault();
+  //     const commandInput = e.target.value.split(' ');
+  //     console.log('commandInput', e.target.value);
+  //     if (commandInput.length <= 1) return;
+
+  //     const command = commandInput[0];
+  //     const args = commandInput.slice(1).join(' ');
+
+  //     // const dir = resolveNode(fileSystem, cwd);
+
+  //     console.log(command, 'command', args, ' < -args');
+  //     if (command === 'ls' || command === 'cd' || command === 'cat') {
+  //       const response = handleCommand(`ls ${args}`);
+  //       const ls_list = response.split('        ');
+
+  //       if (currentDirList.length === 0) {
+  //         setCurrentDirList(ls_list);
+  //         setInput(`${command} ${ls_list.join(' ')}`);
+  //         e.target.value = `${command} ${ls_list.join(' ')}`;
+  //       }
+
+  //       console.log('currentDirList', currentDirList);
+  //       console.log('args', args);
+  //       if (currentDirList.length > 0 && !currentDirList.includes(args)) {
+  //         console.log('came in this if to match key words');
+  //       }
+
+  //       if (currentDirList.length > 0) {
+  //         console.log('came in this if to shift');
+  //         const latestDir = currentDirList.shift();
+  //         setInput(`${command} ${latestDir}`);
+  //         e.target.value = `${command} ${latestDir}`;
+  //       }
+
+  //       return;
+  //     }
+  //   }
+  //   if (e.key === 'Enter') {
+  //     setCurrentDirList([]);
+  //     handleSubmit(e as any);
+  //     // handleCommand(input.replace('/', ''));
+  //     // e.preventDefault();
+  //   }
+  // };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Tab' && !e.shiftKey) {
+      e.preventDefault();
+
+      // 1) Grab the latest raw value
+      const raw = e.currentTarget.value.trim();
+      const [command, ...rest] = raw.split(' ');
+      const args = rest.join(' ');
+
+      if (!['ls', 'cd', 'cat'].includes(command)) return;
+
+      // 2) On the **first** Tab, build the list of completions
+      if (suggestionsRef.current.length === 0) {
+        const lsOutput = handleCommand(`ls ${args}`) || '';
+        // split on whitespace, strip trailing '/' from dirs
+        suggestionsRef.current = lsOutput.split(/\s+/).map((s: any) => s.replace(/\/$/, ''));
+        suggestionIndexRef.current = 0;
+      }
+
+      // 3) Pick the next suggestion
+      const suggestion = suggestionsRef.current[suggestionIndexRef.current] || '';
+      // advance, wrap around
+      suggestionIndexRef.current = (suggestionIndexRef.current + 1) % suggestionsRef.current.length;
+
+      // 4) Update the input both visually and in state
+      const newValue = `${command} ${suggestion}/`;
+      e.currentTarget.value = newValue;
+      setInput(newValue);
+      return;
+    }
+
+    if (e.key === 'ArrowUp') {
+      // iterate over the history from the end
+      e.preventDefault();
+      const cmds = commandsRef.current;
+      if (cmds.length === 0) return;
+
+      historyPointerRef.current = Math.min(historyPointerRef.current + 1, cmds.length - 1);
+      const idx = cmds.length - 1 - historyPointerRef.current;
+      const cmd = cmds[idx];
+      setInput(cmd);
+      e.currentTarget.value = cmd;
+    }
+    if (e.key === 'ArrowDown') {
+      // iterate over the history from the current index to the end
+      e.preventDefault();
+      const cmds = commandsRef.current;
+      if (cmds.length === 0) return;
+
+      historyPointerRef.current = Math.max(historyPointerRef.current - 1, 0);
+      const idx = cmds.length - 1 - historyPointerRef.current;
+      const cmd = cmds[idx];
+      setInput(cmd);
+      e.currentTarget.value = cmd;
+    }
+
+    // On Enter, reset suggestions so next Tab rebuilds them
+    if (e.key === 'Enter') {
+      suggestionsRef.current = [];
+      suggestionIndexRef.current = 0;
+      handleSubmit(e as any);
+    }
   };
 
   const handleCommand = (raw: string) => {
@@ -85,10 +207,9 @@ export default function Terminal({ isExpanded }: { isExpanded: boolean }) {
     const command = tokens[0];
     const args = tokens[1];
     const dir = resolveNode(fileSystem, cwd);
-
     switch (command) {
       case 'ls':
-        if (!dir || dir.type !== 'directory') return 'No such file or directory';
+        // if (!dir || dir.type !== 'directory') return 'No such file or directory';
         return Object.entries(dir.children)
           .map(([name, node]: any) => (node.type === 'directory' ? `${node.name}/` : `${node.name}`))
           .join('        ');
@@ -184,6 +305,7 @@ whoami  - show current user
             type="text"
             value={input}
             onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
             autoFocus
           />
         </form>
