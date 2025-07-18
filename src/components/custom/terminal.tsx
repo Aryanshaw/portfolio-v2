@@ -255,8 +255,9 @@ whoami  - show current user
         <form onSubmit={handleSubmit} className="flex border-1 rounded-sm p-2 py-4 text-xs bg-black/20">
           <span className="mr-2 text-xs">user@aryan:{cwd.join('/') || '/'}$</span>
           <input
-            className="bg-transparent outline-none flex-1 text-green-400 text-xs"
+            className="bg-transparent outline-none flex-1 text-green-400 text-xs placeholder:text-gray-400/70"
             type="text"
+            placeholder="Code here , type `help` to see what I can do"
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
