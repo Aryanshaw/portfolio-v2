@@ -1,7 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { fileSystem, resolveNode } from '@/helper';
 
-type HistoryItem = { message: string; success: boolean };
+type HistoryItem = {
+  message: string;
+  success: boolean;
+  isHtml?: boolean;
+};
 
 export default function Terminal({ isExpanded }: { isExpanded: boolean }) {
   const [input, setInput] = useState('');
@@ -40,21 +44,39 @@ export default function Terminal({ isExpanded }: { isExpanded: boolean }) {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const prompt = `user@aryan:${cwd.join('/') || '/'}$`;
+
     if (input.trim() === 'clear') {
       setHistory([]);
       setInput('');
       return;
     }
 
+    // 1) push the prompt
+    const baseHistory = [...history, { message: `${prompt} ${input}`, success: true }];
+
+    // 2) run the command
     const output = handleCommand(input);
-    const newHistory = [...history, { message: `${prompt} ${input}`, success: true }];
+    let resultItem: HistoryItem;
 
-    const errorMessages = ['It is not a directory', 'It is not a file', 'No such file or directory', 'Cannot go up'];
-    if (output && errorMessages.includes(output.trim())) newHistory.push({ message: output, success: false });
-    else if (output) newHistory.push({ message: output, success: true });
-    else newHistory.push({ message: 'Command not found', success: false });
+    if (!output) {
+      resultItem = { message: 'Command not found', success: false };
+    } else if (typeof output === 'string') {
+      // error vs success
+      const isError = [
+        'It is not a directory',
+        'It is not a file',
+        'No such file or directory',
+        'Cannot go up',
+      ].includes(output.trim());
+      // detect if it’s HTML by looking for an <img> tag
+      const html = output.includes('<img ');
+      resultItem = { message: output, success: !isError, isHtml: html };
+    } else {
+      // if in future you return objects, handle here...
+      resultItem = { message: String(output), success: true };
+    }
 
-    setHistory(newHistory);
+    setHistory([...baseHistory, resultItem]);
     setInput('');
   };
 
@@ -63,8 +85,6 @@ export default function Terminal({ isExpanded }: { isExpanded: boolean }) {
     const command = tokens[0];
     const args = tokens[1];
     const dir = resolveNode(fileSystem, cwd);
-
-    console.log(command, args);
 
     switch (command) {
       case 'ls':
@@ -80,7 +100,9 @@ cd      - change directory
 cat     - read file
 clear   - clear terminal
 pwd     - print working directory
-help    - show commands`;
+help    - show commands
+whoami  - show current user
+`;
 
       case 'cd':
         if (args === '..') {
@@ -113,6 +135,9 @@ help    - show commands`;
       case 'pwd':
         return cwd.join('/');
 
+      case 'whoami':
+        return `aryanshaw | ${introMessage}`;
+
       default:
         return null;
     }
@@ -132,7 +157,15 @@ help    - show commands`;
           }}
         >
           {/* <span className="mr-2 text-xs">user@aryan:~$</span> */}
-          <span className=" whitespace-pre-wrap text-wrap text-xs">{item.message}</span>
+          {/* <span className=" whitespace-pre-wrap text-wrap text-xs text-left">{item.message}</span> */}
+          {item.isHtml ? (
+            <div
+              className="prose text-xs font-mono whitespace-pre-wrap"
+              dangerouslySetInnerHTML={{ __html: item.message }}
+            />
+          ) : (
+            <pre className="whitespace-pre-wrap text-xs font-mono">{item.message}</pre>
+          )}
         </div>
       ))}
       {/* Streaming intro text (no prefix for realism) */}

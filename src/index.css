@@ -130,3 +130,7 @@
     transform: translate(-50%, -40%) scale(1);
   }
 }
+
+.prose img {
+  @apply max-h-68 mx-auto my-4 rounded shadow-lg;
+}

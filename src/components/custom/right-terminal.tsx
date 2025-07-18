@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import { BorderBeam } from '@/components/magicui/border-beam';
 import Terminal from './terminal';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 export default function TerminalPreview() {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -18,7 +18,7 @@ export default function TerminalPreview() {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsExpanded(true), 1500);
+    const timer = setTimeout(() => setIsExpanded(true), 1000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -61,21 +61,24 @@ export default function TerminalPreview() {
         {isExpanded && (
           <>
             <div className="border-t border-border" />
-            <div className="p-3 flex flex-col gap-2 overflow-y-auto" style={{ height: `calc(100% - ${miniHeight}px)` }}>
+            <div
+              className="p-3 flex flex-col gap-2 overflow-y-auto relative"
+              style={{ height: `calc(100% - ${miniHeight}px)` }}
+            >
               <Terminal isExpanded={isExpanded} />
 
               <BorderBeam
                 duration={6}
                 borderWidth={1}
                 size={500}
-                className="from-transparent via-purple-400 to-transparent"
+                className="from-transparent via-purple-400 to-transparent absolute inset-0"
               />
               <BorderBeam
                 duration={6}
                 delay={3}
                 size={500}
                 borderWidth={1}
-                className="from-transparent via-blue-400 to-transparent"
+                className="from-transparent via-blue-400 to-transparent absolute inset-0"
               />
             </div>
           </>

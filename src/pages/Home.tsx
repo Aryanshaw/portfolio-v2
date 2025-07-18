@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Spotlight } from '../components/ui/spotlight';
 import { BackgroundBeams } from '../components/ui/background-beams';
 import Aurora from '../blocks/Backgrounds/Aurora/Aurora';
